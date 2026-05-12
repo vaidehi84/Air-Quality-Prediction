@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+*.log
+*.pot
+*.mo
+*.swp
+.DS_Store
+.vscode/
+model/*.pkl
+screenshots/*.png

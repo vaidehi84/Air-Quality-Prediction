@@ -1,0 +1,1 @@
+Assets folder placeholder for GUI or documentation assets. Add icons, design files, or charts here as needed.
