@@ -56,35 +56,6 @@ Final_End_Sem_major_project-Air-Quality--main/
 
 ---
 
-## 🚀 Deployment Instructions
-
-1. Create a Python environment:
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Run the Streamlit app:
-
-```bash
-streamlit run app.py
-```
-
-4. Or train the model manually:
-
-```bash
-python train_model.py
-```
-
----
-
 ## 🧠 Feature Highlights
 
 - **Real-time AQI prediction** from pollutant values

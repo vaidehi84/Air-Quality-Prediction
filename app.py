@@ -405,25 +405,63 @@ def render_health_page():
 
 
 def render_about_page():
-    st.markdown("<div class='panel-card'><h2>About the Project</h2><p class='small-note'>A polished AI-driven air quality dashboard built for GitHub portfolios and placement interviews.</p></div>", unsafe_allow_html=True)
+    st.markdown("<div class='panel-card'><h2>About This Project</h2><p class='small-note'>A polished AI-driven air quality dashboard built for GitHub portfolios and placement interviews.</p></div>", unsafe_allow_html=True)
+
     st.markdown(
         """
-        **AI-Powered Air Quality Prediction Dashboard** is a modern analytical application built using Streamlit, Plotly, and Scikit-Learn.
+        The **AI-Powered Air Quality Prediction Dashboard** is a machine learning-based analytics platform designed to predict and analyze air quality using environmental pollutant data.
 
-        This repository includes:
-        - production-ready Streamlit dashboard
-        - responsive prediction UI
-        - pollutant analytics charts
-        - robust ML training and model fallback support
-        - downloadable AQI reports
+        This project provides real-time AQI insights, pollution trend analysis, and health recommendations through an interactive and modern Streamlit dashboard.
+
+        Using machine learning algorithms and data visualization techniques, the system predicts air quality categories based on pollutant levels such as **PM2.5, PM10, NO2, SO2, CO, and Ozone**.
         """
     )
-    st.markdown("---")
-    st.markdown("### Deployment Instructions")
-    st.code(
-        "pip install -r requirements.txt\nstreamlit run app.py",
-        language="bash",
+
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.subheader("🚀 Key Highlights")
+    st.markdown(
+        """
+        - Real-time AQI prediction
+        - Interactive analytics dashboard
+        - Pollution trend visualization
+        - Health and safety recommendations
+        - Machine learning-based forecasting
+        - Modern responsive UI using Streamlit
+        """
     )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.subheader("🛠️ Technologies Used")
+    st.markdown(
+        """
+        - Python
+        - Streamlit
+        - Scikit-learn
+        - Pandas
+        - NumPy
+        - Plotly
+        - Machine Learning
+        """
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.subheader("🎯 Project Goal")
+    st.markdown(
+        """
+        The objective of this project is to create an intelligent and accessible platform that helps users understand pollution levels, identify environmental risks, and promote awareness regarding air quality and public health.
+        """
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.subheader("👩‍💻 Developed by Vaidehi Sharma")
+    st.markdown("A polished Streamlit dashboard experience tailored for both data-driven insights and portfolio presentation.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("---")
     st.markdown("### Technologies")
     st.write("Python, Streamlit, Plotly, Pandas, NumPy, Scikit-Learn, Joblib")
 
