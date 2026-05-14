@@ -1,197 +1,448 @@
-import sys
 from pathlib import Path
-import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
 
+import numpy as np
 import pandas as pd
-from model.pipeline import load_model, train_and_evaluate
-from utils.data_utils import AQI_STYLES, FEATURE_COLUMNS
+import plotly.graph_objects as go
+import streamlit as st
+
+from utils.data_utils import (
+    FEATURE_COLUMNS,
+    AQI_STYLES,
+    get_health_recommendation,
+    get_sample_dataset,
+    load_dataset,
+    prepare_training_data,
+)
+from utils.model_utils import (
+    load_model,
+    save_model,
+    train_and_evaluate,
+    train_classifier,
+    evaluate_model,
+)
+from utils.visualization import (
+    build_aqi_trend_chart,
+    build_category_count_chart,
+    build_feature_importance_chart,
+    build_pollutant_bar_chart,
+    build_pollutant_comparison_chart,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_PATH = PROJECT_ROOT / "dataset" / "global_air_pollution_dataset.csv"
-MODEL_PATH = PROJECT_ROOT / "model" / "air_quality_model.pkl"
-SCREENSHOT_DIR = PROJECT_ROOT / "screenshots"
+MODEL_PATH = PROJECT_ROOT / "models" / "air_quality_model.pkl"
+
+st.set_page_config(
+    page_title="AI-Powered Air Quality Prediction Dashboard",
+    page_icon="🌿",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 
-def load_or_train_model():
-    if MODEL_PATH.exists():
-        try:
-            return load_model(MODEL_PATH), None
-        except Exception as error:
-            print("Model load failed:", error)
-    result = train_and_evaluate(DATA_PATH, MODEL_PATH, SCREENSHOT_DIR)
-    return result["model"], result["metrics"]
-
-
-def create_main_window(model, performance_metrics):
-    root = tk.Tk()
-    root.title("Air Quality Prediction System")
-    root.geometry("900x620")
-    root.resizable(False, False)
-    root.configure(bg="#eef3f7")
-
-    style = ttk.Style(root)
-    style.configure("Header.TLabel", background="#eef3f7", foreground="#1f3566", font=("Segoe UI", 20, "bold"))
-    style.configure("Subtitle.TLabel", background="#eef3f7", foreground="#4f5b7d", font=("Segoe UI", 11))
-    style.configure("Section.TLabelframe", background="#eef3f7", borderwidth=0)
-    style.configure("Section.TLabelframe.Label", font=("Segoe UI", 14, "bold"), foreground="#1a2f52")
-
-    header_frame = tk.Frame(root, bg="#eef3f7")
-    header_frame.pack(fill="x", padx=20, pady=(20, 8))
-
-    title_label = ttk.Label(header_frame, text="Air Quality Prediction Dashboard", style="Header.TLabel")
-    title_label.pack(anchor="w")
-
-    subtitle_label = ttk.Label(header_frame, text="Enter pollutant AQI values and get an instant category prediction with safety advice.", style="Subtitle.TLabel")
-    subtitle_label.pack(anchor="w", pady=(6, 0))
-
-    content_frame = tk.Frame(root, bg="#eef3f7")
-    content_frame.pack(fill="both", expand=True, padx=20, pady=10)
-
-    input_frame = tk.Frame(content_frame, bg="#ffffff", bd=0, relief=tk.FLAT)
-    input_frame.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=4)
-    input_frame.configure(highlightbackground="#d3dae6", highlightthickness=1, padx=20, pady=20)
-
-    input_title = tk.Label(input_frame, text="Pollutant Inputs", font=("Segoe UI", 14, "bold"), bg="#ffffff", fg="#26334d")
-    input_title.pack(anchor="w", pady=(0, 12))
-
-    field_frame = tk.Frame(input_frame, bg="#ffffff")
-    field_frame.pack(fill="x")
-
-    entries = {}
-    hints = [
-        "CO AQI Value (0-200)",
-        "Ozone AQI Value (0-300)",
-        "NO2 AQI Value (0-200)",
-        "PM2.5 AQI Value (0-500)",
-    ]
-
-    for index, label_text in enumerate(hints):
-        label = tk.Label(field_frame, text=label_text, font=("Segoe UI", 11), bg="#ffffff", fg="#455a75")
-        label.grid(row=index, column=0, sticky="w", pady=10)
-        entry = tk.Entry(field_frame, font=("Segoe UI", 11), width=18, bd=1, relief=tk.SOLID)
-        entry.grid(row=index, column=1, sticky="e", pady=10, padx=(12, 0))
-        entries[label_text] = entry
-
-    button_frame = tk.Frame(input_frame, bg="#ffffff")
-    button_frame.pack(fill="x", pady=(14, 0))
-
-    predict_button = tk.Button(button_frame, text="Predict AQI", command=lambda: predict_aqi(entries, result_widgets, model, performance_metrics),
-                               bg="#2e6ef7", fg="white", activebackground="#254fe2", font=("Segoe UI", 11, "bold"), bd=0, padx=18, pady=10)
-    predict_button.pack(side="left", padx=(0, 8))
-
-    reset_button = tk.Button(button_frame, text="Reset Inputs", command=lambda: reset_fields(entries, result_widgets),
-                             bg="#f0f4ff", fg="#2e6ef7", activebackground="#dbe4ff", font=("Segoe UI", 11, "bold"), bd=0, padx=18, pady=10)
-    reset_button.pack(side="left")
-
-    result_frame = tk.Frame(content_frame, bg="#ffffff", bd=0, relief=tk.FLAT)
-    result_frame.pack(side="right", fill="both", expand=True, padx=(10, 0), pady=4)
-    result_frame.configure(highlightbackground="#d3dae6", highlightthickness=1, padx=20, pady=20)
-
-    result_title = tk.Label(result_frame, text="Prediction Summary", font=("Segoe UI", 14, "bold"), bg="#ffffff", fg="#26334d")
-    result_title.pack(anchor="w", pady=(0, 12))
-
-    card_frame = tk.Frame(result_frame, bg="#f8fbff", bd=0, relief=tk.RIDGE)
-    card_frame.pack(fill="both", expand=True, padx=4, pady=4)
-    card_frame.configure(padx=18, pady=18)
-
-    category_label = tk.Label(card_frame, text="Category: —", font=("Segoe UI", 16, "bold"), bg="#f8fbff", fg="#2e6fce")
-    category_label.pack(anchor="w", pady=(0, 12))
-
-    score_label = tk.Label(card_frame, text="Estimated average AQI score: —", font=("Segoe UI", 11), bg="#f8fbff", fg="#5d6c83")
-    score_label.pack(anchor="w", pady=(0, 6))
-
-    advice_label = tk.Label(card_frame, text="Health recommendation will appear here.", wraplength=300, justify="left",
-                            font=("Segoe UI", 11), bg="#f8fbff", fg="#4d586d")
-    advice_label.pack(anchor="w", pady=(0, 12))
-
-    status_label = tk.Label(card_frame, text="Application ready to predict air quality.", font=("Segoe UI", 10), bg="#f8fbff", fg="#627099")
-    status_label.pack(anchor="w")
-
-    metrics_frame = tk.Frame(result_frame, bg="#ffffff")
-    metrics_frame.pack(fill="x", pady=(16, 0))
-
-    throughput_label = tk.Label(metrics_frame, text="Model accuracy and training details", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#26334d")
-    throughput_label.pack(anchor="w")
-
-    metrics_text = tk.StringVar()
-    metrics_text.set(get_metrics_summary(performance_metrics))
-    metrics_label = tk.Label(metrics_frame, textvariable=metrics_text, wraplength=320, justify="left",
-                             font=("Segoe UI", 10), bg="#ffffff", fg="#4b5d78")
-    metrics_label.pack(anchor="w", pady=(6, 0))
-
-    return root, entries, {
-        "category_label": category_label,
-        "score_label": score_label,
-        "advice_label": advice_label,
-        "status_label": status_label,
-        "metrics_text": metrics_text,
-    }
-
-
-def get_metrics_summary(metrics):
-    if not metrics:
-        return "Model artifacts loaded from disk. Run the app to verify prediction behavior."
-    return (
-        f"Accuracy: {metrics['accuracy'] * 100:.1f}% | "
-        f"Cross-validation score: {metrics.get('cross_validation_score', 0) * 100:.1f}%"
+def inject_styles():
+    st.markdown(
+        """
+        <style>
+        .hero {
+            background: linear-gradient(135deg, #0f4c81 0%, #3b82f6 100%);
+            color: white;
+            padding: 36px;
+            border-radius: 24px;
+            box-shadow: 0 35px 90px rgba(15, 46, 71, 0.18);
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            margin: 0;
+            font-size: 2.8rem;
+            letter-spacing: -0.03em;
+        }
+        .hero p {
+            margin-top: 12px;
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.85);
+        }
+        .panel-card {
+            border-radius: 20px;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 18px 45px rgba(15, 46, 71, 0.08);
+            border: 1px solid rgba(255,255,255,0.48);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .metric-box {
+            border-radius: 18px;
+            padding: 20px;
+            background: #ffffff;
+            box-shadow: 0 12px 30px rgba(15, 46, 71, 0.08);
+            text-align: center;
+        }
+        .metric-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #334e68;
+        }
+        .metric-box p {
+            margin: 0;
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: #102a43;
+        }
+        .gradient-button {
+            background: linear-gradient(135deg, #2dd4bf 0%, #22c55e 100%);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.4rem;
+            border-radius: 999px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .gradient-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 40px rgba(34, 197, 94, 0.26);
+        }
+        .category-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+        }
+        .category-chip.good { background: #22c55e; }
+        .category-chip.moderate { background: #eab308; }
+        .category-chip.poor { background: #f97316; }
+        .category-chip.severe { background: #ef4444; }
+        .small-note {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        .sidebar-content {
+            font-size: 0.95rem;
+            color: #334e68;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
 
 
-def format_prediction_result(category: str, average_score: float):
-    style = AQI_STYLES.get(category, AQI_STYLES["Moderate"])
-    return style, f"Category: {category}", f"Estimated average AQI score: {average_score:.1f}", style["message"]
+@st.cache_data(ttl=600)
+def cached_load_dataset(path: str) -> pd.DataFrame:
+    return load_dataset(Path(path))
 
 
-def predict_aqi(entries, widgets, model, metrics):
+@st.cache_resource
+def cached_load_or_train_model(data_path: str, model_path: str):
+    model_path_obj = Path(model_path)
+    data_path_obj = Path(data_path)
+
+    if model_path_obj.exists():
+        try:
+            model = load_model(model_path_obj)
+            df = cached_load_dataset(str(data_path_obj)) if data_path_obj.exists() else get_sample_dataset()
+            return model, None, df
+        except Exception:
+            pass
+
     try:
-        values = [float(entry.get()) for entry in entries.values()]
-        if any(value < 0 for value in values):
-            raise ValueError("Values must be zero or positive.")
-
-        feature_vector = pd.DataFrame([{col: values[index] for index, col in enumerate(FEATURE_COLUMNS)}])
-        prediction = model.predict_category(feature_vector)[0]
-        average_value = sum(values) / len(values)
-
-        style, category_text, score_text, advice_text = format_prediction_result(prediction, average_value)
-        widgets["category_label"].config(text=category_text, fg=style["color"], bg=style["background"])
-        widgets["score_label"].config(text=score_text, bg=style["background"])
-        widgets["advice_label"].config(text=advice_text, bg=style["background"])
-        widgets["status_label"].config(text="Prediction complete. Stay informed and stay safe.", bg=style["background"])
-        for key, widget in widgets.items():
-            if key == "metrics_text":
-                continue
-            widget.config(bg=style["background"])
-        if metrics:
-            widgets["metrics_text"].set(get_metrics_summary(metrics))
-
-    except ValueError as error:
-        messagebox.showerror("Invalid input", f"Please enter valid numeric pollutant values. {error}")
+        model, metrics, df = train_and_evaluate(data_path_obj, model_path_obj)
+        return model, metrics, df
+    except FileNotFoundError:
+        df = get_sample_dataset()
+        X, y = prepare_training_data(df)
+        model = train_classifier(X, y)
+        metrics = evaluate_model(model, X, y)
+        save_model(model, model_path_obj)
+        return model, metrics, df
+    except Exception as error:
+        st.error(f"An unexpected error occurred while preparing the model: {error}")
+        raise
 
 
-def reset_fields(entries, widgets):
-    for entry in entries.values():
-        entry.delete(0, tk.END)
-    widgets["category_label"].config(text="Category: —", fg="#2e6fce", bg="#f8fbff")
-    widgets["score_label"].config(text="Estimated average AQI score: —", bg="#f8fbff")
-    widgets["advice_label"].config(text="Health recommendation will appear here.", bg="#f8fbff")
-    widgets["status_label"].config(text="Application ready to predict air quality.", bg="#f8fbff")
-    widgets["metrics_text"].set(get_metrics_summary(None))
+def build_status_banner(category: str):
+    if category == "Good":
+        return "good", "Excellent air quality. Enjoy outdoor activities.", "success"
+    if category == "Moderate":
+        return "moderate", "Moderate air quality. Sensitive individuals should be cautious.", "info"
+    if category == "Poor":
+        return "poor", "Poor air quality. Consider limiting outdoor exposure.", "warning"
+    return "severe", "Severe air quality. Stay indoors and limit exposure.", "error"
+
+
+def format_report(inputs: dict, predicted_category: str, predicted_score: float) -> pd.DataFrame:
+    report_data = {
+        "PM2.5 AQI Value": [inputs["PM2.5 AQI Value"]],
+        "PM10 AQI Value": [inputs["PM10 AQI Value"]],
+        "NO2 AQI Value": [inputs["NO2 AQI Value"]],
+        "SO2 AQI Value": [inputs["SO2 AQI Value"]],
+        "CO AQI Value": [inputs["CO AQI Value"]],
+        "Ozone AQI Value": [inputs["Ozone AQI Value"]],
+        "Predicted AQI Score": [predicted_score],
+        "Predicted AQI Category": [predicted_category],
+        "Recommendation": [get_health_recommendation(predicted_category)],
+    }
+    return pd.DataFrame(report_data)
+
+
+def get_category_color(category: str) -> str:
+    return {
+        "Good": "#22c55e",
+        "Moderate": "#eab308",
+        "Poor": "#f97316",
+        "Very Poor": "#f43f5e",
+        "Severe": "#ef4444",
+    }.get(category, "#64748b")
+
+
+def build_gauge_chart(category: str, score: float):
+    color = get_category_color(category)
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=score,
+            title={"text": "AQI Meter", "font": {"size": 20}},
+            delta={"reference": 100, "increasing": {"color": color}},
+            gauge={
+                "axis": {"range": [0, 500], "tickwidth": 1, "tickcolor": "#334e68"},
+                "bar": {"color": color},
+                "steps": [
+                    {"range": [0, 50], "color": "#22c55e"},
+                    {"range": [51, 100], "color": "#facc15"},
+                    {"range": [101, 200], "color": "#fb923c"},
+                    {"range": [201, 300], "color": "#f43f5e"},
+                    {"range": [301, 500], "color": "#9d174d"},
+                ],
+            },
+        )
+    )
+    fig.update_layout(margin=dict(t=10, b=10, l=10, r=10), paper_bgcolor="rgba(0,0,0,0)")
+    return fig
+
+
+def build_summary_cards(df: pd.DataFrame):
+    total_samples = len(df)
+    average_aqi = df["AQI Value"].mean() if "AQI Value" in df.columns else np.mean(df[FEATURE_COLUMNS].mean())
+    category_counts = df["AQI Category"].value_counts().to_dict()
+    top_sample = df.sort_values(by="AQI Value", ascending=False).head(1)
+    most_polluted = (
+        f"Sample #{int(top_sample.index[0])} - {top_sample['AQI Category'].values[0]}"
+        if not top_sample.empty
+        else "No data available"
+    )
+    return total_samples, average_aqi, most_polluted, category_counts
+
+
+def render_sidebar() -> str:
+    st.sidebar.markdown("# 🌿 AQI Dashboard")
+    page = st.sidebar.radio(
+        "Sections",
+        ["Home", "Prediction", "Analytics", "Health", "About"],
+        index=0,
+    )
+    st.sidebar.markdown("---")
+    st.sidebar.markdown(
+        "<div class='sidebar-content'>Use this dashboard to explore pollution trends, run AI forecasts, and download prediction reports.</div>",
+        unsafe_allow_html=True,
+    )
+    st.sidebar.markdown("---")
+    return page
+
+
+def render_homepage(dataset: pd.DataFrame, metrics: dict | None):
+    st.markdown(
+        """
+        <div class='hero'>
+            <h1>AI-Powered Air Quality Prediction Dashboard</h1>
+            <p class='small-note'>Real-time pollution analytics and machine learning powered AQI forecasting.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    total_samples, average_aqi, most_polluted, category_counts = build_summary_cards(dataset)
+    stats = [
+        ("Total Samples", total_samples, "📦"),
+        ("Average AQI", f"{average_aqi:.1f}", "📈"),
+        ("Most Polluted", most_polluted, "🌫️"),
+        ("AQI Categories", ", ".join(category_counts.keys()), "🟢"),
+    ]
+
+    stat_cols = st.columns(4)
+    for idx, (title, value, icon) in enumerate(stats):
+        stat_cols[idx].markdown(
+            f"<div class='metric-box'><h3>{icon} {title}</h3><p>{value}</p></div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div class='panel-card'>", unsafe_allow_html=True)
+    st.markdown("### Overview")
+    st.write(
+        "This premium dashboard presents AQI forecasting, pollutant comparison, and health recommendations in a clean, modern analytics layout."
+    )
+    if metrics is not None:
+        st.write(f"**Model Accuracy:** {metrics['accuracy'] * 100:.2f}%  |  **Cross Validation:** {metrics['cross_validation_score'] * 100:.2f}%")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    chart_cols = st.columns(2)
+    with chart_cols[0]:
+        st.plotly_chart(build_aqi_trend_chart(dataset), use_container_width=True)
+    with chart_cols[1]:
+        st.plotly_chart(build_pollutant_bar_chart(dataset), use_container_width=True)
+
+    st.markdown("---")
+    st.subheader("AQI Categories")
+    category_cols = st.columns(4)
+    for idx, (label, color) in enumerate([
+        ("Good", "#22c55e"),
+        ("Moderate", "#eab308"),
+        ("Poor", "#f97316"),
+        ("Severe", "#ef4444"),
+    ]):
+        category_cols[idx].markdown(
+            f"<div class='panel-card' style='background:{color}; color:white;'><h3>{label}</h3></div>",
+            unsafe_allow_html=True,
+        )
+
+
+def render_prediction_page(model):
+    st.markdown("<div class='panel-card'><h2>Real-Time AQI Prediction</h2><p class='small-note'>Enter pollutant AQI values to forecast air quality instantly.</p></div>", unsafe_allow_html=True)
+
+    with st.form("prediction_form"):
+        inputs_left, inputs_right = st.columns(2)
+        with inputs_left:
+            pm25 = st.number_input("PM2.5", min_value=0.0, max_value=500.0, value=25.0, step=0.1)
+            so2 = st.number_input("SO2", min_value=0.0, max_value=300.0, value=18.0, step=0.1)
+            co = st.number_input("CO", min_value=0.0, max_value=200.0, value=12.0, step=0.1)
+        with inputs_right:
+            pm10 = st.number_input("PM10", min_value=0.0, max_value=500.0, value=45.0, step=0.1)
+            no2 = st.number_input("NO2", min_value=0.0, max_value=300.0, value=30.0, step=0.1)
+            ozone = st.number_input("Ozone", min_value=0.0, max_value=500.0, value=28.0, step=0.1)
+
+        submit = st.form_submit_button("Predict Air Quality")
+
+    if submit:
+        pollutant_inputs = {
+            "PM2.5 AQI Value": pm25,
+            "PM10 AQI Value": pm10,
+            "NO2 AQI Value": no2,
+            "SO2 AQI Value": so2,
+            "CO AQI Value": co,
+            "Ozone AQI Value": ozone,
+        }
+        user_features = pd.DataFrame([pollutant_inputs], columns=FEATURE_COLUMNS)
+        predicted_category = model.predict_category(user_features)[0]
+        predicted_score = float(np.mean(user_features.iloc[0].values))
+        report_df = format_report(pollutant_inputs, predicted_category, predicted_score)
+
+        category_class, recommendation_text, alert_type = build_status_banner(predicted_category)
+        if alert_type == "warning":
+            st.warning(f"**{predicted_category} air quality detected.** {recommendation_text}")
+        elif alert_type == "error":
+            st.error(f"**{predicted_category} air quality detected.** {recommendation_text}")
+        else:
+            st.success(f"**{predicted_category} air quality detected.** {recommendation_text}")
+
+        result_cols = st.columns([2, 3])
+        with result_cols[0]:
+            st.markdown(
+                f"<div class='panel-card'><div class='category-chip {category_class}'>{predicted_category}</div><h3>Your AQI Forecast</h3><p style='font-size:2.3rem; margin:0;'>{predicted_score:.1f}</p><p class='small-note'>Higher values indicate poorer air quality.</p></div>",
+                unsafe_allow_html=True,
+            )
+            st.plotly_chart(build_gauge_chart(predicted_category, predicted_score), use_container_width=True)
+
+        with result_cols[1]:
+            st.plotly_chart(build_pollutant_comparison_chart(pollutant_inputs), use_container_width=True)
+            csv_report = report_df.to_csv(index=False)
+            st.download_button(
+                "Download Prediction Report",
+                data=csv_report,
+                file_name="aqi_prediction_report.csv",
+                mime="text/csv",
+                key="download-report",
+            )
+
+
+def render_analytics_page(dataset, metrics, model):
+    st.markdown("<div class='panel-card'><h2>Analytics & Trends</h2><p class='small-note'>Visualize pollutant impact, AQI trends, and feature importance.</p></div>", unsafe_allow_html=True)
+
+    chart_cols = st.columns(2)
+    with chart_cols[0]:
+        st.plotly_chart(build_aqi_trend_chart(dataset), use_container_width=True)
+    with chart_cols[1]:
+        st.plotly_chart(build_pollutant_bar_chart(dataset), use_container_width=True)
+
+    st.plotly_chart(build_category_count_chart(dataset), use_container_width=True)
+    if metrics is not None:
+        importance = model.pipeline.named_steps["classifier"].feature_importances_
+        st.plotly_chart(build_feature_importance_chart(FEATURE_COLUMNS, importance), use_container_width=True)
+
+    if metrics is not None:
+        st.markdown("<div class='panel-card'><h3>Model Evaluation</h3><p class='small-note'>Current AI model performance and training summary.</p></div>", unsafe_allow_html=True)
+        st.write(
+            f"**Accuracy:** {metrics['accuracy'] * 100:.2f}%  |  **Cross-validation:** {metrics['cross_validation_score'] * 100:.2f}%"
+        )
+
+
+def render_health_page():
+    st.markdown("<div class='panel-card'><h2>Health Recommendations</h2><p class='small-note'>Safety guidance based on AQI category and pollutant exposure.</p></div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        - ✅ **Good:** Outdoor activity is safe. Maintain normal routines.
+        - ⚠️ **Moderate:** Sensitive groups should reduce prolonged outdoor exertion.
+        - 🔶 **Poor:** Avoid extended outdoor activity and use indoor air filtration.
+        - 🔴 **Severe:** Stay indoors, close windows, and use air purifiers.
+        """
+    )
+    st.markdown("---")
+    st.markdown(
+        "**Future health improvements:** GPS-based alerts, live AQI API feeds, and wearable pollution monitoring for smart cities."
+    )
+
+
+def render_about_page():
+    st.markdown("<div class='panel-card'><h2>About the Project</h2><p class='small-note'>A polished AI-driven air quality dashboard built for GitHub portfolios and placement interviews.</p></div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        **AI-Powered Air Quality Prediction Dashboard** is a modern analytical application built using Streamlit, Plotly, and Scikit-Learn.
+
+        This repository includes:
+        - production-ready Streamlit dashboard
+        - responsive prediction UI
+        - pollutant analytics charts
+        - robust ML training and model fallback support
+        - downloadable AQI reports
+        """
+    )
+    st.markdown("---")
+    st.markdown("### Deployment Instructions")
+    st.code(
+        "pip install -r requirements.txt\nstreamlit run app.py",
+        language="bash",
+    )
+    st.markdown("### Technologies")
+    st.write("Python, Streamlit, Plotly, Pandas, NumPy, Scikit-Learn, Joblib")
 
 
 def main():
-    try:
-        model, metrics = load_or_train_model()
-    except FileNotFoundError:
-        messagebox.showerror(
-            "Dataset missing",
-            f"Could not locate the dataset file at {DATA_PATH}. Please verify the dataset path and try again.",
-        )
-        sys.exit(1)
+    inject_styles()
+    model, metrics, dataset = cached_load_or_train_model(str(DATA_PATH), str(MODEL_PATH))
+    page = render_sidebar()
 
-    root, entries, result_widgets = create_main_window(model, metrics)
-    root.mainloop()
+    if page == "Home":
+        render_homepage(dataset, metrics)
+    elif page == "Prediction":
+        render_prediction_page(model)
+    elif page == "Analytics":
+        render_analytics_page(dataset, metrics, model)
+    elif page == "Health":
+        render_health_page()
+    elif page == "About":
+        render_about_page()
 
 
 if __name__ == "__main__":

@@ -1,235 +1,184 @@
-# 🌍 Air Quality Prediction System
+# 🌿 AI-Powered Air Quality Prediction & Analytics Dashboard
 
 <div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.10-blue?style=for-the-badge\&logo=python)
-![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Scikit--Learn-orange?style=for-the-badge)
-![Tkinter](https://img.shields.io/badge/GUI-Tkinter-green?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Completed-success?style=for-the-badge)
-![GitHub](https://img.shields.io/badge/GitHub-Portfolio%20Project-black?style=for-the-badge\&logo=github)
-
-### 🚀 AI-Powered AQI Prediction & Environmental Analytics Dashboard
-
-A professional Machine Learning desktop application that predicts **Air Quality Index (AQI)** categories using pollutant parameters with an interactive modern Tkinter GUI.
+![Streamlit](https://img.shields.io/badge/Framework-Streamlit-FF4B4B?style=for-the-badge&logo=streamlit)
+![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge&logo=python)
+![ML](https://img.shields.io/badge/Machine%20Learning-Scikit--Learn-orange?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)
 
 </div>
 
 ---
 
-# ✨ Project Overview
+## 🚀 Project Overview
 
-The **Air Quality Prediction System** is a Machine Learning-based environmental analytics application designed to analyze air pollution data and predict AQI levels using intelligent predictive models.
+This repository contains a polished **AI-powered air quality analytics dashboard** built using **Streamlit**, **Pandas**, **Scikit-Learn**, and **Plotly**.
 
-This project combines:
-
-* 📊 Data Analysis
-* 🤖 Machine Learning
-* 🖥️ Modern GUI Development
-* 📈 Visualization
-* 🌱 Environmental Insights
-
-into one complete production-style application.
+The application predicts **AQI categories** from pollutant inputs, visualizes pollution trends, and provides intelligent health recommendations for a modern portfolio-ready project.
 
 ---
 
-# 🔥 Key Features
+## ✨ What You Get
 
-## 🧠 Machine Learning Pipeline
-
-✔️ Data preprocessing
-✔️ Missing value handling
-✔️ Feature engineering
-✔️ Feature scaling & normalization
-✔️ Random Forest classification
-✔️ Model training & evaluation
-✔️ AQI category prediction
+- Responsive **Streamlit web dashboard** with premium analytics styling
+- Predictive AQI classification using a trained **Random Forest** model
+- Real-time pollutant input controls for **PM2.5, PM10, NO2, SO2, CO, Ozone**
+- Interactive **Plotly charts** for trends, category counts, and comparison analytics
+- **Downloadable prediction report** for easy stakeholder sharing
+- Built-in fallback dataset support for stable deployment
+- Professional project organization for GitHub and resume presentations
 
 ---
 
-## 🖥️ Modern Tkinter GUI
-
-✨ Professional desktop dashboard
-✨ Responsive pollutant input fields
-✨ Stylish prediction panels
-✨ Interactive AQI result display
-✨ Clear & Reset controls
-✨ User-friendly layout
-
----
-
-## 📊 Data Visualization
-
-📈 AQI trend analysis
-📉 Pollutant distribution charts
-🔥 Correlation heatmaps
-📊 Feature importance graphs
-📌 Prediction comparison visuals
-
----
-
-## 🌱 AQI Classification System
-
-| AQI Range  | Category  |
-| ---------- | --------- |
-| 🟢 0–50    | Good      |
-| 🟡 51–100  | Moderate  |
-| 🟠 101–200 | Poor      |
-| 🔴 201–300 | Very Poor |
-| ⚫ 301+     | Severe    |
-
----
-
-# 🛠️ Tech Stack
-
-## 💻 Programming Language
-
-* Python
-
-## 📚 Libraries & Frameworks
-
-* Pandas
-* NumPy
-* Scikit-learn
-* Matplotlib
-* Seaborn
-* Tkinter
-
-## ⚙️ Tools
-
-* VS Code
-* Jupyter Notebook
-* Git & GitHub
-
----
-
-# 📂 Project Structure
+## 📦 Updated Project Structure
 
 ```bash
-Air-Quality-Prediction-System/
+Final_End_Sem_major_project-Air-Quality--main/
 │
 ├── app.py
-├── dataset/
-├── model/
-├── notebooks/
-├── screenshots/
-├── utils/
+├── train_model.py
 ├── requirements.txt
 ├── README.md
-└── .gitignore
+├── dataset/
+│   └── global_air_pollution_dataset.csv
+├── models/
+│   └── air_quality_model.pkl
+├── utils/
+│   ├── data_utils.py
+│   ├── model_utils.py
+│   └── visualization.py
+├── assets/
+│   └── README_PLACEHOLDER.txt
+├── model/  # legacy artifacts preserved
+└── screenshots/
 ```
 
 ---
 
-# 🚀 Installation & Setup
+## 🚀 Deployment Instructions
 
-## 1️⃣ Clone Repository
+1. Create a Python environment:
 
 ```bash
-git clone https://github.com/your-username/Air-Quality-Prediction-System.git
+python -m venv venv
+venv\Scripts\activate
 ```
 
----
-
-## 2️⃣ Navigate to Project Folder
-
-```bash
-cd Air-Quality-Prediction-System
-```
-
----
-
-## 3️⃣ Install Dependencies
+2. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 4️⃣ Run Application
+3. Run the Streamlit app:
 
 ```bash
-python app.py
+streamlit run app.py
+```
+
+4. Or train the model manually:
+
+```bash
+python train_model.py
 ```
 
 ---
 
-# 📸 Application Screenshots
+## 🧠 Feature Highlights
 
-## 🖥️ Main Dashboard
-
-*Add GUI Screenshot Here*
-
----
-
-## 📊 AQI Prediction Output
-
-*Add Prediction Screenshot Here*
+- **Real-time AQI prediction** from pollutant values
+- **AQI category classification**: Good, Moderate, Poor, Very Poor, Severe
+- **Trend analysis** and **pollutant comparison charts**
+- **Health recommendations** and safety alert banners
+- **Automatic model loading** with training fallback
+- **Resume-ready dashboard UI** with premium analytics styling
 
 ---
 
-## 📈 Data Visualization
+## 📊 Screenshots
 
-*Add Charts Screenshot Here*
+### Main Dashboard
 
----
+![Dashboard Screenshot](assets/README_PLACEHOLDER.png)
 
-# 📊 Machine Learning Workflow
+### Prediction Panel
 
-```text
-Data Collection
-       ↓
-Data Cleaning & Preprocessing
-       ↓
-Feature Engineering
-       ↓
-Model Training
-       ↓
-Evaluation & Accuracy Analysis
-       ↓
-AQI Prediction
-       ↓
-GUI Integration
-```
+![Prediction Screenshot](assets/README_PLACEHOLDER.png)
+
+### Analytics Charts
+
+![Analytics Screenshot](assets/README_PLACEHOLDER.png)
 
 ---
 
-# 🌟 Why This Project Stands Out
+## 🧭 Future Enhancements
 
-✅ Production-style Python project
-✅ Modern Tkinter GUI application
-✅ Real Machine Learning workflow
-✅ Clean modular architecture
-✅ GitHub portfolio ready
-✅ Recruiter-friendly documentation
-✅ Strong project for placements & interviews
+- Live AQI API integration for city-level monitoring
+- GPS-enabled air quality detection
+- Mobile-first responsive dashboard deployment
+- Deep learning forecasting for next-day AQI
+- IoT-based smart city pollution alerts
 
 ---
 
-# 🎯 Future Enhancements
+## 🌍 About This Project
 
-🚀 Real-time AQI API integration
-🚀 Live pollution monitoring
-🚀 Deep Learning-based prediction
-🚀 Web deployment version
-🚀 Smart environmental recommendations
-🚀 Location-based AQI tracking
+The AI-Powered Air Quality Prediction Dashboard is a machine learning-based analytics platform designed to predict and analyze air quality using environmental pollutant data.
+
+This project provides real-time AQI insights, pollution trend analysis, and health recommendations through an interactive and modern Streamlit dashboard.
+
+Using machine learning algorithms and data visualization techniques, the system predicts air quality categories based on pollutant levels such as PM2.5, PM10, NO2, SO2, CO, and Ozone.
+
+### 🚀 Key Highlights
+
+- Real-time AQI prediction
+- Interactive analytics dashboard
+- Pollution trend visualization
+- Health and safety recommendations
+- Machine learning-based forecasting
+- Modern responsive UI using Streamlit
+
+### 🛠️ Technologies Used
+
+- Python
+- Streamlit
+- Scikit-learn
+- Pandas
+- NumPy
+- Plotly
+- Machine Learning
+
+### 🎯 Project Goal
+
+The objective of this project is to create an intelligent and accessible platform that helps users understand pollution levels, identify environmental risks, and promote awareness regarding air quality and public health.
+
+### 👩‍💻 Developed by Vaidehi Sharma
 
 ---
 
-# 👩‍💻 Built By
+## 💼 Resume-Ready Project Description
 
-## Vaidehi Sharma
+**AI-Powered Air Quality Prediction Dashboard** is a full-stack Python project that blends machine learning, data analytics, and web app deployment. It showcases practical skills in data preprocessing, model training, feature engineering, Streamlit UI design, and production-ready application architecture.
 
-🎓 B.E. CSE (AI & ML) Student
-💡 Passionate about AI, Machine Learning & Data Analytics
-🚀 Interested in building intelligent real-world applications
+Ideal for placement interviews and GitHub portfolios for companies such as **TCS, Cognizant, Infosys, Accenture**.
 
 ---
 
+## 🔧 Tech Stack
 
-<div align="center">
+- Python
+- Streamlit
+- Pandas
+- NumPy
+- Scikit-Learn
+- Plotly
+- Joblib
 
-### 🌱 “Technology for a Cleaner & Smarter Future” 🌍
+---
 
-</div>
+## 👩‍💻 Author
+
+**Vaidehi Sharma**
+
+*Building intelligent applications for a cleaner and smarter future.*
